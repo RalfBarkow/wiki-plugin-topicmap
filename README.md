@@ -1,6 +1,6 @@
-# Federated Wiki - Topimac Plugin
+# Federated Wiki - Topicmap Plugin
 
-This plugin, type: example, extends the markup of the federated wiki.
+This plugin, type: topicmap, extends the markup of the federated wiki.
 
 ## Build
 

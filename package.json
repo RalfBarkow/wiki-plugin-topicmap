@@ -1,0 +1,11 @@
+{
+  "name": "wiki-plugin-topicmap",
+  "version": "0.1.0",
+  "description": "Federated Wiki - Topicmap Lineup Browser (dm6-elm)",
+  "main": "client/topicmap.js",
+  "license": "MIT",
+  "scripts": {
+    "build": "echo 'no build step'",
+    "pack": "npm pack -s"
+  }
+}

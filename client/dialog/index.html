@@ -1,0 +1,56 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Topicmap</title>
+<link rel="stylesheet" href="./style.css">
+
+<body class="theme-light"> <!-- LIGHT BY DEFAULT -->
+  <header class="tm-head">
+    <div class="tm-title">Topicmap</div>
+    <div class="tm-actions">
+      <button id="close">Close</button>
+    </div>
+  </header>
+  <main class="tm-main">
+    <iframe id="app" title="dm6-elm" sandbox="allow-scripts allow-same-origin allow-downloads"></iframe>
+  </main>
+
+  <script>
+    const app = document.getElementById('app');
+    const params = new URLSearchParams(location.search);
+    const DEFAULT_COLD_BOOT = '/assets/pages/cold-boot/cold-boot.html';
+
+    // One-shot guard
+    let handledInit = false;
+
+    window.addEventListener('message', evt => {
+      if (evt.origin !== window.location.origin) return;
+      const msg = evt.data || {};
+      if (msg.kind !== 'topicmap:init') return;
+
+      // set theme if provided; else remain LIGHT
+      const theme = (msg.options && msg.options.theme) || 'light';
+      document.body.className = 'theme-' + theme; // theme-light|theme-dark|theme-auto
+
+      // load cold-boot
+      const coldBoot = params.get('coldBoot') || (msg.options && msg.options.coldBoot) || DEFAULT_COLD_BOOT;
+      app.src = coldBoot;
+
+      app.addEventListener('load', () => {
+        if (handledInit) return;
+        handledInit = true;
+        try {
+          app.contentWindow.postMessage(
+            { kind: 'topicmap:init', lineup: msg.lineup, options: msg.options, from: window.location.origin },
+            '*'
+          );
+        } catch (e) {
+          console.warn('Forward failed; will not retry.', e);
+        }
+      }, { once: true });
+    });
+
+    document.getElementById('close').addEventListener('click', () => {
+      window.parent.postMessage({ kind: 'topicmap:close' }, window.location.origin);
+    });
+  </script>
+</body>
