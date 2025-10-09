@@ -12,7 +12,6 @@
   --tm-muted:  var(--base01, #6b7280);
   --tm-canvas: var(--island-bg, #ffffff);
 }
-
 .topicmap.theme-dark {
   --tm-bg:     var(--bg, #111111);
   --tm-fg:     var(--fg, #eeeeee);
@@ -20,7 +19,6 @@
   --tm-muted:  var(--base1, #888888);
   --tm-canvas: var(--bg, #000000);
 }
-
 @media (prefers-color-scheme: dark) {
   .topicmap.theme-auto {
     --tm-bg:#111111; --tm-fg:#eeeeee; --tm-line:#333333; --tm-muted:#888888; --tm-canvas:#000000;
@@ -46,25 +44,23 @@
 }
 .topicmap .topicmap-toolbar small { color:var(--tm-muted); }
 
-/* Iframe host */
-.topicmap .tm-iframe {
-  width:100%;
-  height:var(--tm-height, 420px);
-  border:1px solid var(--tm-line);
-  border-top:0;
-  background:var(--tm-canvas);
-  border-radius:0 0 8px 8px;
-  display:block;
+/* Viewport: single container for BOTH modes */
+.topicmap .topicmap-viewport {
+  width: 100%;
+  height: var(--tm-height, 420px);
+  border: 1px solid var(--tm-line);
+  border-top: 0;
+  background: var(--tm-canvas);
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  display: block;
 }
 
-/* Inline Elm host (same chrome as iframe) */
-.topicmap .tm-inline {
-  width:100%;
-  height:var(--tm-height, 420px);
-  border:1px solid var(--tm-line);
-  border-top:0;
-  background:var(--tm-canvas);
-  border-radius:0 0 8px 8px;
-  overflow:hidden;
-  display:block;
+/* Iframe inside viewport (cold-boot mode) */
+.topicmap .topicmap-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
 }
