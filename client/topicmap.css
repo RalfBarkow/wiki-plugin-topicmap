@@ -4,34 +4,67 @@
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
 }
 
-/* variables: LIGHT by default */
+/* Theme tokens (inherit from site vars when present) */
 .topicmap.theme-light {
-  --tm-bg:#f8f9fb;
-  --tm-fg:#111;
-  --tm-line:#d8dee9;
-  --tm-muted:#6b7280;
-  --tm-canvas:#ffffff;
+  --tm-bg:     var(--island-bg, #f8f9fb);
+  --tm-fg:     var(--island-fg, #111111);
+  --tm-line:   var(--base1, #d8dee9);
+  --tm-muted:  var(--base01, #6b7280);
+  --tm-canvas: var(--island-bg, #ffffff);
 }
 
-.topicmap-toolbar {
+.topicmap.theme-dark {
+  --tm-bg:     var(--bg, #111111);
+  --tm-fg:     var(--fg, #eeeeee);
+  --tm-line:   var(--base01, #333333);
+  --tm-muted:  var(--base1, #888888);
+  --tm-canvas: var(--bg, #000000);
+}
+
+@media (prefers-color-scheme: dark) {
+  .topicmap.theme-auto {
+    --tm-bg:#111111; --tm-fg:#eeeeee; --tm-line:#333333; --tm-muted:#888888; --tm-canvas:#000000;
+  }
+}
+@media (prefers-color-scheme: light) {
+  .topicmap.theme-auto {
+    --tm-bg:#f8f9fb; --tm-fg:#111111; --tm-line:#d8dee9; --tm-muted:#6b7280; --tm-canvas:#ffffff;
+  }
+}
+
+/* Toolbar */
+.topicmap .topicmap-toolbar {
   display:flex; gap:.5rem; align-items:center;
   padding:8px 10px;
   border:1px solid var(--tm-line);
   background:var(--tm-bg); color:var(--tm-fg);
   border-radius:8px 8px 0 0;
 }
-.topicmap-toolbar .tm-reload {
+.topicmap .topicmap-toolbar .tm-reload {
   background:transparent; color:var(--tm-fg);
   border:1px solid var(--tm-line); padding:6px 10px; border-radius:6px; cursor:pointer;
 }
-.topicmap-toolbar small { color:var(--tm-muted); }
+.topicmap .topicmap-toolbar small { color:var(--tm-muted); }
 
+/* Iframe host */
 .topicmap .tm-iframe {
   width:100%;
   height:var(--tm-height, 420px);
   border:1px solid var(--tm-line);
   border-top:0;
-  background:var(--tm-canvas);   /* white canvas */
+  background:var(--tm-canvas);
   border-radius:0 0 8px 8px;
+  display:block;
+}
+
+/* Inline Elm host (same chrome as iframe) */
+.topicmap .tm-inline {
+  width:100%;
+  height:var(--tm-height, 420px);
+  border:1px solid var(--tm-line);
+  border-top:0;
+  background:var(--tm-canvas);
+  border-radius:0 0 8px 8px;
+  overflow:hidden;
   display:block;
 }
