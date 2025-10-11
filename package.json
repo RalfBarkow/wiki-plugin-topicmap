@@ -6,6 +6,15 @@
   "license": "MIT",
   "scripts": {
     "build": "echo 'no build step'",
-    "pack": "npm pack -s"
+    "pack": "npm pack -s",
+    "lint\\:css": "stylelint \"client/**/*.css\" \"theme/**/*.css\" \"**/*.html\" \"**/*.vue\"",
+    "lint\\:css\\:fix": "stylelint \"client/**/*.css\" \"theme/**/*.css\" \"**/*.html\" \"**/*.vue\" --fix"
+  },
+  "devDependencies": {
+    "@double-great/stylelint-a11y": "^3.4.0",
+    "postcss-html": "^1.8.0",
+    "stylelint": "^16.25.0",
+    "stylelint-config-standard": "^39.0.1",
+    "stylelint-no-unsupported-browser-features": "^8.0.4"
   }
 }

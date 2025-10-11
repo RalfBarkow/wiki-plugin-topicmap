@@ -4,28 +4,29 @@
 :root,
 body.theme-light {
   --tm-bg:#f8f9fb;
-  --tm-fg:#111111;
+  --tm-fg:#111;
   --tm-line:#d8dee9;
   --tm-muted:#6b7280;
-  --tm-canvas:#ffffff;
+  --tm-canvas:#fff;
 }
 
 body.theme-dark {
-  --tm-bg:#111111;
-  --tm-fg:#eeeeee;
-  --tm-line:#333333;
-  --tm-muted:#888888;
-  --tm-canvas:#000000;
+  --tm-bg:#111;
+  --tm-fg:#eee;
+  --tm-line:#333;
+  --tm-muted:#888;
+  --tm-canvas:#000;
 }
 
 @media (prefers-color-scheme: dark) {
   body.theme-auto {
-    --tm-bg:#111111; --tm-fg:#eeeeee; --tm-line:#333333; --tm-muted:#888888; --tm-canvas:#000000;
+    --tm-bg:#111; --tm-fg:#eee; --tm-line:#333; --tm-muted:#888; --tm-canvas:#000;
   }
 }
+
 @media (prefers-color-scheme: light) {
   body.theme-auto {
-    --tm-bg:#f8f9fb; --tm-fg:#111111; --tm-line:#d8dee9; --tm-muted:#6b7280; --tm-canvas:#ffffff;
+    --tm-bg:#f8f9fb; --tm-fg:#111; --tm-line:#d8dee9; --tm-muted:#6b7280; --tm-canvas:#fff;
   }
 }
 
@@ -45,6 +46,7 @@ html, body {
   background:var(--tm-bg); color:var(--tm-fg);
 }
 .tm-title { font-weight:600; }
+
 .tm-actions button {
   background:transparent; color:var(--tm-fg);
   border:1px solid var(--tm-line); padding:6px 10px; border-radius:8px; cursor:pointer;
