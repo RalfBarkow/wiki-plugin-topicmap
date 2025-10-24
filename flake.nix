@@ -40,7 +40,7 @@
             set -euo pipefail
 
             WIKI_DIR="''\${WIKI_DIR:-$HOME/workspace/wiki/node_modules/wiki}"
-            WIKI_CONFIG="''\${WIKI_CONFIG:-$HOME/workspace/wiki-client/config.json.safe}"
+            WIKI_CONFIG="''\${WIKI_CONFIG:-$HOME/workspace/wiki/config.json.safe}"
             WIKI_PORT="''\${WIKI_PORT:-3333}"
 
             [ -d "''${WIKI_DIR}" ] || { echo "ERROR: WIKI_DIR does not exist: ''${WIKI_DIR}" >&2; exit 1; }
@@ -191,7 +191,7 @@ EOF
           shellHook = ''
             export TOPICMAP_DIR="''\${TOPICMAP_DIR:-$PWD}"
             export WIKI_DIR="''\${WIKI_DIR:-$HOME/workspace/wiki/node_modules/wiki}"
-            export WIKI_CONFIG="''\${WIKI_CONFIG:-$HOME/workspace/wiki-client/config.json.safe}"
+            export WIKI_CONFIG="''\${WIKI_CONFIG:-$HOME/workspace/wiki/config.json.safe}"
             export WIKI_PORT="''\${WIKI_PORT:-3333}"
             export STYLELINT_GLOBS="''\${STYLELINT_GLOBS:-client/**/*.css theme/**/*.css **/*.html **/*.vue}"
 
