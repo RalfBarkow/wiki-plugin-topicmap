@@ -368,6 +368,70 @@
     viewport.innerHTML = `<div style="padding:8px;color:#c00">Elm failed: ${message}</div>`;
   }
 
+  function getViewportFromItem($item) {
+    return $item.find('.topicmap-viewport')[0] || null;
+  }
+
+  function resolveViewport($item, maxFrames = 10) {
+    return new Promise(resolve => {
+      let remaining = maxFrames;
+      let lastSeen = null;
+      const check = () => {
+        const current = getViewportFromItem($item);
+        if (current) {
+          lastSeen = current;
+          if (current.isConnected && current.parentNode) {
+            resolve(current);
+            return;
+          }
+        }
+        remaining -= 1;
+        if (remaining <= 0) {
+          resolve(lastSeen);
+          return;
+        }
+        requestAnimationFrame(check);
+      };
+      check();
+    });
+  }
+
+  async function reloadInline($item, opts, button) {
+    if (button && button.disabled) return;
+    if (button) button.disabled = true;
+    try {
+      const previousViewport = $item.data('topicmap-viewport') || null;
+      const viewport = await resolveViewport($item, 10);
+      if (!viewport) {
+        console.warn('[topicmap] viewport not found; aborting boot');
+        return;
+      }
+      if (previousViewport && previousViewport !== viewport) {
+        cleanupViewport(previousViewport);
+      }
+      $item.data('topicmap-viewport', viewport);
+
+      const bootId = (viewport.__topicmapBootId || 0) + 1;
+      viewport.__topicmapBootId = bootId;
+      const bundleSrc = pickElmBundleSrc(opts, viewport);
+      await loadScriptOnce(bundleSrc);
+      if (viewport.__topicmapBootId !== bootId) return;
+      cleanupViewport(viewport);
+      const app = await bootElmInline(viewport, opts);
+      if (!app) return;
+      await setupInputController(viewport, opts);
+    } catch (e) {
+      const viewport = getViewportFromItem($item);
+      if (viewport) {
+        const msg = e && e.message ? e.message : String(e);
+        renderInlineError(viewport, msg);
+      }
+      console.error(e);
+    } finally {
+      if (button) button.disabled = false;
+    }
+  }
+
   // ---------- Plugin ---------------------------------------------------------
 
   function emit($item, item) {
@@ -391,50 +455,17 @@
 
   function bind($item, item) {
     const opts     = $item.data('topicmap-opts') || parseOptions(item.text);
-    const viewport = $item.find('.topicmap-viewport')[0];
-    const bootId = (viewport.__topicmapBootId || 0) + 1;
-    viewport.__topicmapBootId = bootId;
 
     // clear previous handlers for this item
     $item.off('.topicmap');
 
     // Always run inline (no iframe path)
-    (async () => {
-      try {
-        const bundleSrc = pickElmBundleSrc(opts, viewport);
-        await loadScriptOnce(bundleSrc);
-        if (viewport.__topicmapBootId !== bootId) return;
-        cleanupViewport(viewport);
-        const app = await bootElmInline(viewport, opts);
-        if (!app) return;
-        await setupInputController(viewport, opts);
-      } catch (e) {
-        const msg = e && e.message ? e.message : String(e);
-        renderInlineError(viewport, msg);
-        console.error(e);
-      }
-    })();
+    reloadInline($item, opts);
 
     // Manual reload button
-    $item.on('click.topicmap', '.tm-reload', async evt => {
+    $item.on('click.topicmap', '.tm-reload', evt => {
       const button = evt.currentTarget;
-      if (button && button.disabled) return;
-      if (button) button.disabled = true;
-      try {
-        const reloadId = (viewport.__topicmapBootId || 0) + 1;
-        viewport.__topicmapBootId = reloadId;
-        const bundleSrc = pickElmBundleSrc(opts, viewport);
-        await loadScriptOnce(bundleSrc);
-        if (viewport.__topicmapBootId !== reloadId) return;
-        cleanupViewport(viewport);
-        const app = await bootElmInline(viewport, opts);
-        if (!app) return;
-        await setupInputController(viewport, opts);
-      } catch (e) {
-        console.error('reload failed', e);
-      } finally {
-        if (button) button.disabled = false;
-      }
+      reloadInline($item, opts, button);
     });
 
     // Keep default double-click editor
