@@ -10,6 +10,9 @@
 - **Integration anchor:** Reuse dm6-elm `AppEmbed` as the only Elm entrypoint.
 - **Flags contract:** `slug` and `stored` are non-negotiable and must remain strings.
 - **No legacy modules:** Do not resurrect AppModel/AppRunner/MapRenderer/ModelAPI.
+- **postMessage policy:** No `'*'` targetOrigin; use `window.location.origin` for
+  same-origin, derive from `document.referrer` for framed, and validate
+  `event.origin` + payload shape on receivers.
 
 ## Open Questions
 - When (if ever) should the framed dialog fallback be used?

@@ -44,11 +44,13 @@ C) **Docs + defaults point to a bundle containing `Elm.AppEmbed`**
    in the FedWiki viewport.
 
 ### Security
-5) **postMessage hardening (must-fix):** The inline publish bridge currently uses
-   `postMessage('*')` and lacks origin/schema checks. This must be corrected to:
-   - use an explicit `targetOrigin`
-   - validate `event.origin`
-   - validate payload schema
+5) **postMessage policy (required):**
+   - No wildcard `'*'` targetOrigin.
+   - Use `window.location.origin` for same-origin embedding.
+   - When framed, derive `targetOrigin` from `document.referrer` (URL → origin);
+     fall back to `window.location.origin` only if referrer is empty/invalid.
+   - Receivers must verify `event.origin` matches the expected origin and validate
+     payload shape before acting.
 
 ### Reliability & Lifecycle
 6) **Single inline instance:** Rebinding yields a single Elm instance and stable DOM.

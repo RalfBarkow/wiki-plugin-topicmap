@@ -18,18 +18,39 @@
   </main>
 
   <script>
+    function getParentOrigin() {
+      const ref = document.referrer;
+      if (ref) {
+        try {
+          return new URL(ref).origin;
+        } catch (e) {
+          return window.location.origin;
+        }
+      }
+      return window.location.origin;
+    }
+
+    function isValidInitMessage(msg) {
+      if (!msg || typeof msg !== 'object') return false;
+      if (msg.kind !== 'topicmap:init') return false;
+      if (msg.lineup && !Array.isArray(msg.lineup)) return false;
+      if (msg.options && typeof msg.options !== 'object') return false;
+      return true;
+    }
+
     const app = document.getElementById('app');
     const params = new URLSearchParams(location.search);
     const DEFAULT_COLD_BOOT = '/assets/pages/cold-boot/cold-boot.html';
+    const parentOrigin = getParentOrigin();
 
     // Guard to avoid double-forward on reloads
     let forwarded = false;
 
     window.addEventListener('message', evt => {
-      // accept only same-origin init messages
-      if (evt.origin !== window.location.origin) return;
+      // accept only expected-origin init messages
+      if (evt.origin !== parentOrigin) return;
       const msg = evt.data || {};
-      if (msg.kind !== 'topicmap:init') return;
+      if (!isValidInitMessage(msg)) return;
 
       // theme hint
       const theme = (msg.options && msg.options.theme) || 'light';
@@ -55,7 +76,7 @@
     });
 
     document.getElementById('close').addEventListener('click', () => {
-      window.parent.postMessage({ kind: 'topicmap:close' }, window.location.origin);
+      window.parent.postMessage({ kind: 'topicmap:close' }, parentOrigin);
     });
   </script>
 </body>

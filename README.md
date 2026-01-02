@@ -62,6 +62,8 @@ Item text options control the bundle path (these are parsed by `client/topicmap.
 - `ELM_BUNDLE` (default: `/assets/dm6-elm/app.js`)
 - `ELM_BUNDLE_DEBUG` (optional; used when `DEBUG true`)
 - `DEBUG` (true/false) selects which bundle to load
+- `AMBIENT` (true/false) enables Ambient input mode (default: false)
+- `AMBIENT_EXCLUDES` (comma-separated selectors) to exclude in Ambient mode
 
 Your bundle must export `Elm.AppEmbed` on `window`. If it does not, the plugin fails with:
 `Elm module not found: Elm.AppEmbed`.
@@ -85,8 +87,8 @@ wheel, and key events to Elm:
 
 - Scoped (default): only events that originate inside the topicmap viewport are forwarded.
 - Ambient (opt-in): page-level listeners are enabled, but with guard rails.
-
-Note: the controller module is defined but wiring it into the plugin boot path is still pending.
+  - Enable with `AMBIENT true` in the item text (default is false).
+  - Add selector exclusions with `AMBIENT_EXCLUDES .selector1,.selector2`.
 
 Ambient mode behavior:
 
@@ -101,6 +103,8 @@ Exclusions include built-ins plus your own selectors:
   `[contenteditable="true"]`, `.page`, `.editor`
 - Custom: pass `excludes: []` when creating the controller
 
+Input events are currently logged via `console.debug` until Elm-side ports are defined.
+
 ## Troubleshooting
 
 - Missing module error:
@@ -114,6 +118,29 @@ Exclusions include built-ins plus your own selectors:
     decoder treats it as a JSON string (default is `"{}"`).
 - Bundle path not loading:
   - Confirm `ELM_BUNDLE` is correct and the file is accessible at that URL.
+
+Note: Debug mode requires a stable DOM; the plugin may auto-fallback to the non-debug
+bundle during refresh/rebind if the viewport is not connected.
+
+## Smoke Test (real wiki page)
+
+This is a minimal end-to-end check in a real wiki page with the current plugin.
+
+1) Install the plugin and load a wiki page that includes a `topicmap` item.
+2) Set item text to ensure debug mode and the bundle path:
+
+```
+ELM_BUNDLE /assets/dm6-elm/app.js
+DEBUG true
+```
+
+3) Open DevTools console and verify boot logs show flags:
+   - Look for `[topicmap] Elm inline booted` and confirm `slug`/`stored`.
+4) Click inside the viewport and observe input logs:
+   - Look for `[topicmap] input` entries (scoped by default).
+
+TODO: add a minimal demo page under `docs/` or `public/` once one of those
+directories exists in this repo.
 
 ## License
 
