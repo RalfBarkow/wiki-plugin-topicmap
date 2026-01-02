@@ -7,6 +7,7 @@
   "scripts": {
     "build": "echo 'no build step'",
     "pack": "npm pack -s",
+    "repomix-md": "npx repomix -c repomix.config.json",
     "lint\\:css": "stylelint \"client/**/*.css\" \"theme/**/*.css\" \"**/*.html\" \"**/*.vue\"",
     "lint\\:css\\:fix": "stylelint \"client/**/*.css\" \"theme/**/*.css\" \"**/*.html\" \"**/*.vue\" --fix"
   },

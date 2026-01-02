@@ -121,10 +121,27 @@
     const ns = (window.Elm && window.Elm[opts.elmModule]) || null;
     if (!ns) throw new Error(`Elm module not found: Elm.${opts.elmModule}`);
 
-    const flags = {
-      lineup: gatherLineup(),
-      options: { theme: opts.theme, height: opts.height, debug: !!opts.debug }
-    };
+    // AppEmbed expects { slug : String, stored : String }
+    const pageEl = viewport.closest('.page');
+    const slug =
+      (pageEl && pageEl.getAttribute('data-slug')) ||
+      ((pageEl && pageEl.id) ? pageEl.id.replace(/^page_/, '') : '') ||
+      location.pathname.split('/').filter(Boolean).pop() ||
+      'empty';
+
+    let pageData = null;
+    try {
+      pageData = (typeof wiki !== 'undefined' && typeof wiki.getData === 'function')
+        ? wiki.getData()
+        : null;
+    } catch (_) {
+      pageData = null;
+    }
+
+    // Prefer "{}" over "null" to match AppEmbed fallback and avoid downstream decode surprises
+    const stored = (pageData == null) ? '{}' : JSON.stringify(pageData);
+
+    const flags = { slug: String(slug), stored: String(stored) };
     const app = ns.init({ node: viewport, flags });
 
     // Normalize after first paint and on subsequent DOM mutations

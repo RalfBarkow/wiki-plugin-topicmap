@@ -1,0 +1,31 @@
+{
+  "$schema": "https://repomix.com/schemas/config/v1.json",
+  "root": ".",
+  "output": {
+    "filePath": "wiki-plugin-topicmap-repomix-output.md",
+    "style": "markdown"
+  },
+  "include": [
+    "client/**",
+    "server/**",
+    "src/**",
+    "public/**",
+    "docs/**",
+    "README*",
+    "LICENSE*",
+    "package.json",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "*.md"
+  ],
+  "exclude": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/build/**",
+    "**/.git/**",
+    "**/.DS_Store",
+    "**/*.min.*",
+    "**/.cache/**"
+  ]
+}
