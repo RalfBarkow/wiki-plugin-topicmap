@@ -23,6 +23,7 @@ C) **Docs + defaults point to a bundle containing `Elm.AppEmbed`**
 
 ## Scope
 - Inline mode only (no iframe cold-boot in the current path).
+- dm6-elm's `public/cold-boot.html` is the reference harness in dm6-elm and is not used directly by this plugin.
 - Client/plugin code only; no server changes.
 
 ## Explicit Non-Goals

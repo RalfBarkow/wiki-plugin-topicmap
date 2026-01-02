@@ -2,6 +2,7 @@
 
 This plugin renders a Federated Wiki topicmap inline and reuses dm6-elm's `AppEmbed`.
 It loads an Elm bundle into the page and mounts `window.Elm.AppEmbed` inside the plugin viewport.
+dm6-elm's `public/cold-boot.html` remains the reference harness in dm6-elm, and is not used directly by this plugin.
 
 ## Quick Start (integration-first)
 
@@ -56,7 +57,7 @@ The plugin loads an Elm bundle by inserting a script tag and then calling:
 window.Elm.AppEmbed.init({ node: viewport, flags })
 ```
 
-Item text options control the bundle path:
+Item text options control the bundle path (these are parsed by `client/topicmap.js`):
 
 - `ELM_BUNDLE` (default: `/assets/dm6-elm/app.js`)
 - `ELM_BUNDLE_DEBUG` (optional; used when `DEBUG true`)
@@ -84,6 +85,8 @@ wheel, and key events to Elm:
 
 - Scoped (default): only events that originate inside the topicmap viewport are forwarded.
 - Ambient (opt-in): page-level listeners are enabled, but with guard rails.
+
+Note: the controller module is defined but wiring it into the plugin boot path is still pending.
 
 Ambient mode behavior:
 
