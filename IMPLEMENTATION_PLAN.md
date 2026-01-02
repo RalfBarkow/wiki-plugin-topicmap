@@ -1,52 +1,108 @@
-# Implementation Plan
+# Implementation Plan — AppEmbed Integration
 
-## 0. Repo hygiene
-- Remove committed `.direnv/`; add to `.gitignore`.
-- Align `pnpm` scripts and lint configs; drop `theme/**` glob if dir doesn’t exist.
+## 0. Current state (baseline)
+- Inline plugin boot exists in `client/topicmap.js`.
+- AppEmbed flags are already derived (`slug`, `stored`).
+- Input controller exists in `client/topicmap-input-modes.js` but is not wired.
+- Publish bridge still uses `postMessage('*')`.
 
-## 1. Input modes design
-- Options: `mode: "scoped" | "ambient"` (default `"scoped"`), `ambient: { excludes: string[] }`.
-- UI: small in-viewport badge when Ambient is active (“Ambient ON”, click to toggle). Keyboard: `Esc` → Scoped.
+## 1. Verify Elm bundle contract (dm6-elm AppEmbed)
 
-## 2. Implement Scoped mode
-- Delegate listeners to the viewport only.
-- Forward events to Elm **only** if `event.target` is inside viewport.
+Goal: confirm a bundle that exports `window.Elm.AppEmbed` is available in wiki assets.
 
-## 3. Implement Ambient mode (opt-in)
-- Register global listeners (pointer/keyboard/wheel) with `passive` where possible.
-- Guard rails:
-  - Skip forwarding if target is input/textarea/contenteditable/select or matches `ambient.excludes`.
-  - Never disrupt focus. Do not call `preventDefault` unless strictly necessary (documented).
-- Indicator + toggle; clean switch between modes at runtime.
+Steps:
+- Build dm6-elm and copy output to wiki assets:
+  - Example path: `/assets/dm6-elm/app.js`
+- Verify the bundle in a browser console:
+  - `window.Elm && window.Elm.AppEmbed && typeof window.Elm.AppEmbed.init === 'function'`
 
-## 4. Secure messaging
-- Replace `postMessage('*')` with explicit origin.
-- Add receiver `event.origin` and schema validation.
+Plugin options to point at it (topicmap item text):
+```
+ELM_BUNDLE /assets/dm6-elm/app.js
+ELM_BUNDLE_DEBUG /assets/dm6-elm/app.debug.js
+DEBUG false
+```
 
-## 5. Lifecycle cleanup
-- Track observers/timers on `viewport`; disconnect/clear on unbind/rebind.
-- Ensure single Elm instance per viewport (idempotent boot).
+Touchpoints:
+- `client/topicmap.js` (bundle loading)
+- `README.md` (bundle contract)
 
-## 6. Overlay anchoring
-- Normalize “absolute/fixed” overlays to viewport-relative positioning.
-- Visual regression check via demo.
+## 2. Verify boot flags correctness (slug/stored)
 
-## 7. Handshake + defer routing
-- JS → Elm `Init`; gate event routing until Elm sends `Ready`.
+Goal: confirm AppEmbed receives the exact `{ slug, stored }` flags.
 
-## 8. Lint/build polish
-- ESLint/Stylelint pass; strict mode where feasible.
+Checklist:
+- `slug` derivation:
+  - `.page[data-slug]` OR
+  - `.page#page_*` OR
+  - `location.pathname` last segment OR
+  - `"empty"` fallback
+- `stored` derivation:
+  - `wiki.getData()` when available
+  - `"{}"` fallback on error or null
+- Confirm strings are passed: `String(slug)`, `String(stored)`
 
-## 9. Demo & docs
-- `demo/index.html` toggles modes, shows overlay, logs forwarded events.
-- README documents options, modes, safety constraints, and troubleshooting.
+Debug steps:
+- Add a temporary `console.debug('[topicmap] flags', flags)` in `client/topicmap.js`.
+- Confirm values in DevTools, then remove.
 
-## 10. Tests
-- Playwright scenarios for Scoped/Ambient behaviors and toggling.
-- Golden snapshot for a sample page JSON.
+Touchpoints:
+- `client/topicmap.js`
 
-## 11. Optional framed fallback
-- Keep `dialog/` behind a feature flag as isolation fallback.
+## 3. Input modes integration (Scoped default, Ambient optional)
 
-## 12. Release
-- Bump version, CHANGELOG, tag `v0.1`.
+Goal: wire the input controller into the topicmap boot path.
+
+Steps:
+- Import/create the controller from `client/topicmap-input-modes.js`.
+- Create it once per viewport after AppEmbed boot.
+- Default to Scoped; expose optional config for Ambient (e.g. item option).
+- Ensure badge visibility and Esc-to-exit behavior.
+
+Touchpoints:
+- `client/topicmap.js`
+- `client/topicmap-input-modes.js`
+- `README.md` (document usage)
+
+## 4. Lifecycle hygiene (single Elm instance + cleanup)
+
+Goal: prevent duplicate Elm instances and dangling observers.
+
+Steps:
+- Track the Elm app instance per viewport.
+- On rebind/reload:
+  - disconnect `MutationObserver`
+  - destroy input controller (if wired)
+  - clear viewport node before re-init
+
+Touchpoints:
+- `client/topicmap.js`
+
+## 5. Security hardening (postMessage)
+
+Goal: eliminate `postMessage('*')` and validate origin/schema.
+
+Steps:
+- Replace `window.parent.postMessage(..., '*')` with an explicit `targetOrigin`.
+- Validate `event.origin` on receive side.
+- Validate payload schema before acting.
+
+Touchpoints:
+- `client/topicmap.js`
+- `client/dialog/index.html` (if used)
+
+## 6. Demo/testing milestones (placeholders ok)
+
+Milestones:
+- Demo page loads AppEmbed inline and shows basic box map.
+- Input modes toggle works (Scoped default, Ambient opt-in, Esc exit).
+- Security checks pass (no wildcard postMessage).
+
+Suggested commands:
+- `npm pack -s` (plugin packaging)
+- `npm run repomix-md` (regenerate pack for review)
+
+Optional tests:
+- Manual: click outside viewport (Scoped should not forward).
+- Manual: enable Ambient, verify badge and Esc exit.
+

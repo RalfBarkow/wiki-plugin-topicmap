@@ -1,50 +1,66 @@
-# wiki-plugin-topicmap — SPEC
+# wiki-plugin-topicmap — SPEC (AppEmbed Contract)
 
-## Problem (narrowed)
-Build a secure, leak-free inline **topicmap** plugin that cleanly bridges a FedWiki item and an Elm map renderer, **and** exposes an optional **Ambient Input mode** that intentionally listens beyond the viewport for novel page-level interactions. Default remains **Scoped** (no surprises); **Ambient** is explicit and reversible.
+## Problem (focused)
+Ship a secure, leak-free inline **topicmap** plugin that **reuses dm6-elm's AppEmbed**
+and mounts it inside a Federated Wiki item viewport. The integration must honor
+the AppEmbed contract precisely and document it clearly.
+
+## Contract Triangle (authoritative)
+
+A) **dm6-elm provides `AppEmbed`**
+- `AppEmbed` is a `Browser.element` module.
+- It expects flags shaped like `{ slug: String, stored: String }`.
+
+B) **`client/topicmap.js` boots with those exact flags**
+- The plugin must call `window.Elm.AppEmbed.init({ node, flags })`.
+- The `flags` object must include `slug` and `stored` as strings.
+- `stored` must be a JSON string, defaulting to `"{}"` when page data is missing.
+
+C) **Docs + defaults point to a bundle containing `Elm.AppEmbed`**
+- Default bundle path: `/assets/dm6-elm/app.js`.
+- `ELM_BUNDLE`/`ELM_BUNDLE_DEBUG` must be documented as the source of the bundle.
+- The bundle must export `window.Elm.AppEmbed`, or boot must fail fast.
 
 ## Scope
-- Inline mode (default). Optional framed/sandboxed fallback behind a flag.
-- No server changes; client/plugin + minimal demo page.
+- Inline mode only (no iframe cold-boot in the current path).
+- Client/plugin code only; no server changes.
 
-Out of scope: new Elm map features unrelated to interaction plumbing.
+## Explicit Non-Goals
+- Do not resurrect old modules or APIs:
+  - AppModel
+  - AppRunner
+  - MapRenderer
+  - ModelAPI
+- Do not add a new Elm app; reuse dm6-elm `AppEmbed`.
 
 ## Acceptance Criteria
 
 ### Functional
-1. **Inline render:** Elm mounts in `.topicmap-viewport`; `--tm-height` respected. Resizes update the viewport without reloading Elm.
-2. **Handshake:** JS sends `Init { pageJson, options }`; Elm replies `Ready`. No user events routed to Elm before `Ready`.
-3. **Input modes (explicit):**
-   - **Scoped (default):** Only events with targets inside the viewport are forwarded to Elm.
-   - **Ambient (opt-in):** Global listeners are enabled; Elm may react to page-level pointer/keyboard gestures.
-     - Must **not** steal focus or interfere with `<input>`, `<textarea>`, `[contenteditable]`, selects, or editable FedWiki UI.
-     - Provides a visible indicator (“Ambient ON”) and a quick toggle (click on indicator or `Esc` to return to Scoped).
-     - Honours an **exclusion allowlist** of selectors (configurable via options).
-4. **Overlay anchoring:** Overlays are positioned relative to the viewport container (no screen-fixed leaks).
+1) **Inline boot with AppEmbed:** `window.Elm.AppEmbed` mounts in `.topicmap-viewport`.
+2) **Correct flags:** `slug` and `stored` are passed as strings, with `stored` defaulting to `"{}"`.
+3) **Bundle selection:** `ELM_BUNDLE` (or `ELM_BUNDLE_DEBUG` when `DEBUG true`) loads the bundle.
+4) **Render proof:** Inline boot passes `slug/stored` and successfully renders a box map
+   in the FedWiki viewport.
 
 ### Security
-5. **postMessage origins:** All `postMessage` use a non-`*` target; receivers validate `event.origin` **and** payload schema.
-6. **Option hardening:** Item options validated (types/ranges). No dynamic code execution from item text.
+5) **postMessage hardening (must-fix):** The inline publish bridge currently uses
+   `postMessage('*')` and lacks origin/schema checks. This must be corrected to:
+   - use an explicit `targetOrigin`
+   - validate `event.origin`
+   - validate payload schema
 
 ### Reliability & Lifecycle
-7. **Observer/timer hygiene:** All observers/timers disconnected on unbind/rebind. Repeated mount/unmount shows no growth in observers.
-8. **Idempotent bind:** Rebinding yields a single Elm instance and stable DOM.
+6) **Single inline instance:** Rebinding yields a single Elm instance and stable DOM.
+7) **Observer hygiene:** Mutation observers/timers are disconnected on unbind/rebind.
 
-### Quality & UX
-9. **Lint/build clean:** ESLint/Stylelint pass; no references to non-existent `theme/` globs.
-10. **Cross-browser:** Desktop Chrome, Firefox (≥145), Safari 17; iOS Safari/Chrome. Touch pan/zoom works without page scroll hijack.
-11. **Perf sanity:** ~100 topics / 200 edges pan/zoom ~60fps on a 2020+ laptop; no long-task spike on mount.
+### UX & Input Modes
+8) **Scoped default:** Only events from inside the viewport are forwarded.
+9) **Ambient opt-in:** Ambient mode is explicit, reversible, and avoids inputs/editors.
 
-### Packaging & Docs
-12. **Dev shell:** Nix/direnv with Node 20+ for dev; Node 22 for build. `pnpm` scripts documented.
-13. **Docs & demo:** README covers options (including `mode: scoped|ambient`, `ambient.excludes`), ports, security notes. Demo exercises both modes with overlay examples.
+### Documentation
+10) **AppEmbed-first docs:** README explains the AppEmbed flags and bundle requirements
+    with defaults matching actual behavior.
 
-### Tests
-14. **E2E (Playwright):**
-    - Scoped: outside clicks/scrolls do **not** reach Elm.
-    - Ambient: outside gestures reach Elm **except** when target matches protected inputs or `ambient.excludes`.
-    - Ambient indicator present; `Esc` returns to Scoped.
-15. **Golden view:** Stable fixture page JSON produces golden snapshot (Elm view JSON or DOM subset).
-
-### Deliverable
-16. **v0.1 tag**: security fix, lifecycle cleanup, explicit modes, docs, demo, and E2E.
+## Deliverable
+- Release `v0.1` with AppEmbed boot, scoped/ambient input modes, security fix,
+  and updated docs.

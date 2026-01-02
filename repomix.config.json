@@ -13,9 +13,11 @@
     "docs/**",
     "README*",
     "LICENSE*",
+    ".gitignore",
     "package.json",
     "package-lock.json",
     "pnpm-lock.yaml",
+    "repomix.config.json",
     "yarn.lock",
     "*.md"
   ],

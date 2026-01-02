@@ -1,16 +1,12 @@
 # WORKLOG — compact & authoritative
 
 ## 2025-10-26
-- Insight: inline plugin’s page-wide mouse event handling is a **feature discovery**, not a bug.
-- Decision: introduce explicit **Input Modes**:
-  - **Scoped (default):** strictly in-viewport.
-  - **Ambient (opt-in):** global listeners with guard rails (no interference with inputs/editors), visible indicator, `Esc` to exit.
-- Kept: security hardening for `postMessage`, lifecycle cleanup for observers/timers, overlay anchoring.
-- SPEC/PLAN updated to reflect modes, UX affordances, and tests.
+- DONE: Switched inline boot to dm6-elm AppEmbed flags `{slug, stored}` and defaulted `stored` to `"{}"`.
+- DONE: Added input-mode controller module (scoped/ambient).
+- DONE: Added `repomix.config.json` + `repomix-md` npm script.
 
-## 2025-10-24 … 2025-10-25
-- Confirmed Node versions (dev 20+, build 22).
-- Nix dev shell drafted; acceptance criteria skeleton created.
-- Identified cleanup: Stylelint glob (`theme/**`), `.direnv` in VCS.
-
-> Rule: This WORKLOG supersedes prior chat; keep terse and collapse resolved items.
+Next actions (priority):
+1) Security: remove `postMessage('*')`, add explicit `targetOrigin` and origin/schema checks.
+2) Lifecycle: ensure MutationObserver cleanup and single Elm instance per viewport.
+3) Wiring: connect input controller into topicmap boot path (Scoped default, Ambient optional).
+4) Integration: verify Elm bundle path in a real wiki and confirm `Elm.AppEmbed.init`.
