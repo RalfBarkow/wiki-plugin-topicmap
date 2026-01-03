@@ -369,30 +369,81 @@
   }
 
   function getViewportFromItem($item) {
+    if (!$item) return null;
+    const key = $item && ($item.data('topicmap-key') || $item.attr('data-topicmap-key'));
+    if (key) {
+      const node = document.querySelector(`[data-topicmap-key="${key}"] .topicmap-viewport`);
+      if (node) return node;
+    }
     return $item.find('.topicmap-viewport')[0] || null;
   }
 
-  function resolveViewport($item, maxFrames = 10) {
+  function getViewportFromButton(button) {
+    if (!button) return null;
+    const host = button.closest('.topicmap');
+    if (!host) return null;
+    return host.querySelector('.topicmap-viewport');
+  }
+
+  function resolveItemElement($item) {
+    if ($item && $item[0] && $item[0].isConnected) return $item;
+    const key = $item && ($item.data('topicmap-key') || $item.attr('data-topicmap-key'));
+    if (!key) return $item;
+    const node = document.querySelector(`[data-topicmap-key="${key}"]`);
+    return node ? $(node) : $item;
+  }
+
+  function waitForViewport({ $item, button, timeoutMs = 1000 }) {
     return new Promise(resolve => {
-      let remaining = maxFrames;
-      let lastSeen = null;
-      const check = () => {
-        const current = getViewportFromItem($item);
-        if (current) {
-          lastSeen = current;
-          if (current.isConnected && current.parentNode) {
-            resolve(current);
-            return;
-          }
+      const started = performance.now();
+      let done = false;
+      let timeoutId = null;
+
+      function finish(result) {
+        if (done) return;
+        done = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        resolve(result);
+      }
+
+      function current() {
+        const fromBtn = getViewportFromButton(button);
+        if (fromBtn) return fromBtn;
+        return getViewportFromItem($item);
+      }
+
+      let lastSeen = current();
+      if (lastSeen && lastSeen.isConnected && lastSeen.parentNode) {
+        finish({ node: lastSeen, connected: true });
+        return;
+      }
+
+      const root =
+        (button && button.closest('.topicmap')) ||
+        ($item && $item[0] && $item[0].isConnected && $item[0]) ||
+        document.body;
+
+      const mo = new MutationObserver(() => {
+        lastSeen = current() || lastSeen;
+        if (lastSeen && lastSeen.isConnected && lastSeen.parentNode) {
+          mo.disconnect();
+          finish({ node: lastSeen, connected: true });
+        } else if (performance.now() - started > timeoutMs) {
+          mo.disconnect();
+          finish({ node: lastSeen || null, connected: false });
         }
-        remaining -= 1;
-        if (remaining <= 0) {
-          resolve(lastSeen);
-          return;
-        }
-        requestAnimationFrame(check);
-      };
-      check();
+      });
+
+      mo.observe(root, { childList: true, subtree: true });
+
+      timeoutId = setTimeout(() => {
+        try { mo.disconnect(); } catch (_) { /* no-op */ }
+        lastSeen = current() || lastSeen;
+        finish({
+          node: lastSeen || null,
+          connected: !!(lastSeen && lastSeen.isConnected && lastSeen.parentNode)
+        });
+      }, timeoutMs);
     });
   }
 
@@ -401,15 +452,24 @@
     if (button) button.disabled = true;
     try {
       const previousViewport = $item.data('topicmap-viewport') || null;
-      const viewport = await resolveViewport($item, 10);
+      const activeItem = resolveItemElement($item);
+      const resolved = await waitForViewport({ $item: activeItem, button, timeoutMs: 1000 });
+      const viewport = resolved && resolved.node ? resolved.node : null;
       if (!viewport) {
         console.warn('[topicmap] viewport not found; aborting boot');
         return;
       }
+      if (!resolved.connected) {
+        console.warn('[topicmap] viewport not connected; aborting boot');
+        return;
+      }
       if (previousViewport && previousViewport !== viewport) {
+        if (opts.debug && console?.debug) {
+          console.debug('[topicmap] viewport replaced during reload');
+        }
         cleanupViewport(previousViewport);
       }
-      $item.data('topicmap-viewport', viewport);
+      activeItem.data('topicmap-viewport', viewport);
 
       const bootId = (viewport.__topicmapBootId || 0) + 1;
       viewport.__topicmapBootId = bootId;
@@ -436,6 +496,11 @@
 
   function emit($item, item) {
     const opts = parseOptions(item.text);
+    if (!item._topicmapKey) {
+      item._topicmapKey = `tm-${Math.random().toString(36).slice(2)}`;
+    }
+    $item.attr('data-topicmap-key', item._topicmapKey);
+    $item.data('topicmap-key', item._topicmapKey);
 
     $item
       .addClass('topicmap')
@@ -455,6 +520,16 @@
 
   function bind($item, item) {
     const opts     = $item.data('topicmap-opts') || parseOptions(item.text);
+    if (item._topicmapKey) {
+      $item.attr('data-topicmap-key', item._topicmapKey);
+      $item.data('topicmap-key', item._topicmapKey);
+    }
+    if (opts.inline === false && !item._topicmapInlineWarned) {
+      item._topicmapInlineWarned = true;
+      if (console?.warn) {
+        console.warn('[topicmap] INLINE false is currently ignored (inline-only build)');
+      }
+    }
 
     // clear previous handlers for this item
     $item.off('.topicmap');
@@ -465,7 +540,9 @@
     // Manual reload button
     $item.on('click.topicmap', '.tm-reload', evt => {
       const button = evt.currentTarget;
-      reloadInline($item, opts, button);
+      const $liveItem = $(evt.currentTarget).closest('.topicmap');
+      const liveOpts = $liveItem.data('topicmap-opts') || parseOptions(item.text);
+      reloadInline($liveItem, liveOpts, button);
     });
 
     // Keep default double-click editor

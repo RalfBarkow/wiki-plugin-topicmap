@@ -62,6 +62,7 @@ Item text options control the bundle path (these are parsed by `client/topicmap.
 - `ELM_BUNDLE` (default: `/assets/dm6-elm/app.js`)
 - `ELM_BUNDLE_DEBUG` (optional; used when `DEBUG true`)
 - `DEBUG` (true/false) selects which bundle to load
+- `INLINE` is accepted for forward compatibility but ignored today (inline-only build)
 - `AMBIENT` (true/false) enables Ambient input mode (default: false)
 - `AMBIENT_EXCLUDES` (comma-separated selectors) to exclude in Ambient mode
 
