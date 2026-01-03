@@ -2,6 +2,9 @@
 (function () {
   if (!window.plugins) window.plugins = {};
   const CURRENT_SCRIPT_SRC = (document.currentScript && document.currentScript.src) || '';
+  const pendingReloads = new Map(); // key -> { requestedAt: number, attempts: number }
+  const RELOAD_TTL_MS = 5000;
+  const RELOAD_MAX_ATTEMPTS = 10;
 
   // ---------- Utils ----------------------------------------------------------
 
@@ -10,6 +13,38 @@
     if (['1','true','yes','on','debug'].includes(v))  return true;
     if (['0','false','no','off','prod','optimize','release'].includes(v)) return false;
     return def;
+  }
+
+  function getItemKey($item) {
+    return ($item && ($item.data('topicmap-key') || $item.attr('data-topicmap-key'))) || null;
+  }
+
+  function enqueueReload($item) {
+    const key = getItemKey($item);
+    if (!key) return;
+    const now = Date.now();
+    const prev = pendingReloads.get(key) || { requestedAt: now, attempts: 0 };
+    pendingReloads.set(key, { requestedAt: prev.requestedAt, attempts: prev.attempts + 1 });
+  }
+
+  function shouldDropPending(entry) {
+    if (!entry) return true;
+    const age = Date.now() - entry.requestedAt;
+    return age > RELOAD_TTL_MS || entry.attempts > RELOAD_MAX_ATTEMPTS;
+  }
+
+  function flushPendingReload($item, item) {
+    const key = getItemKey($item);
+    if (!key) return;
+    const entry = pendingReloads.get(key);
+    if (!entry) return;
+    if (shouldDropPending(entry)) {
+      pendingReloads.delete(key);
+      return;
+    }
+    pendingReloads.delete(key);
+    const opts = $item.data('topicmap-opts') || parseOptions(item.text);
+    setTimeout(() => reloadInline($item, opts, null), 0);
   }
 
   function getParentOrigin() {
@@ -455,12 +490,9 @@
       const activeItem = resolveItemElement($item);
       const resolved = await waitForViewport({ $item: activeItem, button, timeoutMs: 1000 });
       const viewport = resolved && resolved.node ? resolved.node : null;
-      if (!viewport) {
-        console.warn('[topicmap] viewport not found; aborting boot');
-        return;
-      }
-      if (!resolved.connected) {
-        console.warn('[topicmap] viewport not connected; aborting boot');
+      if (!viewport || !resolved.connected) {
+        // DOM likely in transition; request reload on next emit/bind cycle.
+        enqueueReload(activeItem);
         return;
       }
       if (previousViewport && previousViewport !== viewport) {
@@ -516,6 +548,7 @@
       `);
 
     $item.data('topicmap-opts', opts);
+    flushPendingReload($item, item);
   }
 
   function bind($item, item) {
@@ -547,6 +580,8 @@
 
     // Keep default double-click editor
     $item.on('dblclick.topicmap', () => wiki.textEditor($item, item));
+
+    flushPendingReload($item, item);
   }
 
   window.plugins.topicmap = { emit, bind };
